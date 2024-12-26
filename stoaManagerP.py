@@ -1,35 +1,7 @@
-'''
-PROJECT: Password Manager
-
-Project Brief: Create a simple Password Manager that securely stores, retrieves, and manages user credentials (website, username, and password). The program will allow users to interact through a menu-based system and save data to a file for persistence.
-
-Core Features:
-
-	1.	Add New Passwords
-Allow users to input and save a website, username, and password. - complete
-
-	2.	Retrieve Passwords
-Search for stored credentials based on the website name or username. - complete
-
-	3.	Edit Existing Passwords
-Enable users to update their stored information.- complete
-
-	4.	Delete Passwords
-Remove credentials for a specific website. - complete
-
-	5.	Save and Load Passwords
-Use file handling (e.g., JSON or CSV) to store data securely and load it on startup.
-
-	6.	Generate Strong Passwords (Optional)
-Include a feature to create random secure passwords using the random library. - complete
-
-Outcome:
-A functional command-line Password Manager that helps users organize and secure their credentials in a user-friendly way.
-'''
-
 import random as rd
 import string
-from unittest import case
+import json
+import csv
 
 user_data = {}
 
@@ -200,7 +172,81 @@ def delete_password():
         print("\nNo credentials found. Please try again.")
 
 def save_password():
-    pass 
+    global user_data
+    while True:
+        print("\nPlease choose an option:")
+        print("1. Save passwords to a file")
+        print("2. Load passwords from a file")
+        print("3. Create a backup")
+        print("0. Exit")
+
+        user_choice = get_input("Your choice: ")
+
+        match user_choice:
+            case "1":
+                file_name = get_input("Enter the file name to save passwords (e.g., passwords.json or passwords.csv): ").strip()
+                if not (file_name.endswith(".json") or file_name.endswith(".csv")):
+                    print("Invalid file format. Please use a .json or .csv file.")
+                    continue
+                try:
+                    if file_name.endswith(".json"):
+                        with open(file_name, "w") as file:
+                            json.dump(user_data, file, indent=4)
+                        print(f"\nPasswords successfully saved to '{file_name}'!")
+                    elif file_name.endswith(".csv"):
+                        with open(file_name, "w", newline="") as file:
+                            writer = csv.writer(file)
+                            writer.writerow(["Website", "Username", "Password"])
+                            for website, credentials in user_data.items():
+                                for username, password in credentials.items():
+                                    writer.writerow([website, username, password])
+                        print(f"\nPasswords successfully saved to '{file_name}'!")
+                except Exception as e:
+                    print(f"\nAn error occurred while saving passwords: {e}")
+            case "2":
+                file_name = get_input("Enter the file name to load passwords (e.g., passwords.json or passwords.csv): ").strip()
+                if not (file_name.endswith(".json") or file_name.endswith(".csv")):
+                    print("Invalid file format. Please use a .json or .csv file.")
+                    continue
+                try:
+                    if file_name.endswith(".json"):
+                        with open(file_name, "r") as file:
+                            user_data = json.load(file)
+                        print(f"\nPasswords successfully loaded from '{file_name}'!")
+                    elif file_name.endswith(".csv"):
+                        with open(file_name, "r") as file:
+                            reader = csv.reader(file)
+                            next(reader)
+                            user_data = {}
+                            for row in reader:
+                                if len(row) == 3:
+                                    website, username, password = row
+                                    user_data[website] = {username: password}
+                        print(f"\nPasswords successfully loaded from '{file_name}'!")
+                except FileNotFoundError:
+                    print(f"\nFile '{file_name}' not found. Please check the file name and try again.")
+                except json.JSONDecodeError:
+                    print("\nThe file could not be decoded. It might be corrupted.")
+                except Exception as e:
+                    print(f"\nAn error occurred while loading passwords: {e}")
+            case "3":
+                file_name = get_input("Enter the name of the file to back up (e.g., passwords.json or passwords.csv): ").strip()
+                if not (file_name.endswith(".json") or file_name.endswith(".csv")):
+                    print("Invalid file format. Please use a .json or .csv file.")
+                    continue
+                backup_name = f"backup_{file_name}"
+                try:
+                    with open(file_name, "r") as original, open(backup_name, "w") as backup:
+                        backup.write(original.read())
+                    print(f"\nBackup created successfully as '{backup_name}'!")
+                except FileNotFoundError:
+                    print(f"\nFile '{file_name}' not found. Please check the file name and try again.")
+                except Exception as e:
+                    print(f"\nAn error occurred while creating a backup: {e}")
+            case "0":
+                break
+            case _:
+                print("\nInvalid input. Please try again.")
 
 def password_generator():
     if user_data:
